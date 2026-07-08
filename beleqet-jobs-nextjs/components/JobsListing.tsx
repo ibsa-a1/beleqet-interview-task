@@ -3,12 +3,17 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, MapPin, SlidersHorizontal } from "lucide-react";
-import { jobs, categories } from "@/lib/mockData";
 import JobCard from "@/components/JobCard";
+import type { Job } from "@/lib/api";
 
-const jobTypes = ["Full Time", "Part Time", "Remote", "Hybrid", "On-site", "Contract"];
+const jobTypes = ["Full Time", "Part Time", "Remote", "Hybrid", "Contract"];
 
-export default function JobsListing() {
+type Props = {
+  jobs: Job[];
+  categories: { id: string; label: string }[];
+};
+
+export default function JobsListing({ jobs, categories }: Props) {
   const searchParams = useSearchParams();
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
@@ -16,23 +21,35 @@ export default function JobsListing() {
   const [category, setCategory] = useState(searchParams.get("category") ?? "");
   const [type, setType] = useState<string>("");
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    jobs.forEach((j) => {
+      counts[j.category] = (counts[j.category] || 0) + 1;
+    });
+    return counts;
+  }, [jobs]);
+
   const filtered = useMemo(() => {
     return jobs.filter((job) => {
       const matchesQuery =
         !query ||
         job.title.toLowerCase().includes(query.toLowerCase()) ||
         job.company.toLowerCase().includes(query.toLowerCase());
-      const matchesLocation = !location || job.location.toLowerCase().includes(location.toLowerCase());
+      const matchesLocation =
+        !location ||
+        job.location.toLowerCase().includes(location.toLowerCase());
       const matchesCategory = !category || job.category === category;
       const matchesType = !type || job.type === type;
       return matchesQuery && matchesLocation && matchesCategory && matchesType;
     });
-  }, [query, location, category, type]);
+  }, [jobs, query, location, category, type]);
 
   return (
     <div className="container-page py-10">
       <div className="mb-6">
-        <h1 className="text-pageH1">Search verified jobs from trusted employers.</h1>
+        <h1 className="text-pageH1">
+          Search verified jobs from trusted employers.
+        </h1>
         <p className="text-muted text-sm mt-2">{filtered.length} jobs found</p>
       </div>
 
@@ -68,7 +85,9 @@ export default function JobsListing() {
               <button
                 onClick={() => setCategory("")}
                 className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
-                  category === "" ? "bg-brandGreen/10 text-brandGreen font-semibold" : "text-muted hover:bg-pageBg"
+                  category === ""
+                    ? "bg-brandGreen/10 text-brandGreen font-semibold"
+                    : "text-muted hover:bg-pageBg"
                 }`}
               >
                 All Categories
@@ -78,11 +97,15 @@ export default function JobsListing() {
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
                   className={`flex w-full items-center justify-between text-left text-sm px-3 py-2 rounded-lg transition-colors ${
-                    category === cat.id ? "bg-brandGreen/10 text-brandGreen font-semibold" : "text-muted hover:bg-pageBg"
+                    category === cat.id
+                      ? "bg-brandGreen/10 text-brandGreen font-semibold"
+                      : "text-muted hover:bg-pageBg"
                   }`}
                 >
                   <span>{cat.label}</span>
-                  <span className="text-xs">{cat.count}</span>
+                  <span className="text-xs">
+                    {categoryCounts[cat.id] ?? 0}
+                  </span>{" "}
                 </button>
               ))}
             </div>
@@ -94,7 +117,9 @@ export default function JobsListing() {
               <button
                 onClick={() => setType("")}
                 className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
-                  type === "" ? "bg-brandGreen/10 text-brandGreen font-semibold" : "text-muted hover:bg-pageBg"
+                  type === ""
+                    ? "bg-brandGreen/10 text-brandGreen font-semibold"
+                    : "text-muted hover:bg-pageBg"
                 }`}
               >
                 All Types
@@ -104,7 +129,9 @@ export default function JobsListing() {
                   key={t}
                   onClick={() => setType(t)}
                   className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${
-                    type === t ? "bg-brandGreen/10 text-brandGreen font-semibold" : "text-muted hover:bg-pageBg"
+                    type === t
+                      ? "bg-brandGreen/10 text-brandGreen font-semibold"
+                      : "text-muted hover:bg-pageBg"
                   }`}
                 >
                   {t}
@@ -117,8 +144,12 @@ export default function JobsListing() {
         <div>
           {filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-white p-12 text-center">
-              <p className="text-ink font-semibold">No jobs match your filters</p>
-              <p className="text-sm text-muted mt-1">Try adjusting your search or clearing filters.</p>
+              <p className="text-ink font-semibold">
+                No jobs match your filters
+              </p>
+              <p className="text-sm text-muted mt-1">
+                Try adjusting your search or clearing filters.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
